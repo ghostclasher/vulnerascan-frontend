@@ -1,11 +1,11 @@
 import axios from 'axios';
 import { getToken } from './auth';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://vulnerascan2.onrender.com';
 
 const api = axios.create({
   baseURL: API_BASE,
-  timeout: 2 * 60 * 1000,
+  timeout: 120000,
 });
 
 api.interceptors.request.use(cfg => {
@@ -15,3 +15,4 @@ api.interceptors.request.use(cfg => {
 }, err => Promise.reject(err));
 
 export default api;
+
