@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { CssBaseline } from '@mui/material';
 import { ThemeContextProvider } from './context/ThemeContext';
@@ -12,6 +12,9 @@ import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
 import { getToken } from './services/auth';
 import Footer from './components/Footer';
+
+const RENDER_BASE = import.meta.env.VITE_API_BASE_URL;
+// make sure this equals: https://vulnerascan2.onrender.com
 
 function AppRoutes() {
   const PrivateRoute = ({ children }) => {
@@ -39,6 +42,36 @@ function AppRoutes() {
 }
 
 export default function App() {
+
+  // 🔥 RENDER WARM-UP + RETRY (prevents your exact error)
+  useEffect(() => {
+    if (!RENDER_BASE) return;
+
+    const wakeRender = async () => {
+      try {
+        // First try a light OPTIONS preflight (fast)
+        await fetch(`${RENDER_BASE}/api/v1/auth/token`, {
+          method: "OPTIONS",
+          headers: { "Origin": window.location.origin }
+        });
+
+        // Then a tiny GET to fully wake Spring Boot
+        await fetch(`${RENDER_BASE}/api/v1/auth/token`, {
+          method: "GET"
+        });
+
+        console.log("Render backend warmed up ✅");
+      } catch (err) {
+        console.warn("Render still waking up — retrying in 5s…");
+
+        // try again after 5 seconds (common on free tier)
+        setTimeout(wakeRender, 5000);
+      }
+    };
+
+    wakeRender();
+  }, []);
+
   return (
     <ThemeContextProvider>
       <CssBaseline />
@@ -46,3 +79,4 @@ export default function App() {
     </ThemeContextProvider>
   );
 }
+
