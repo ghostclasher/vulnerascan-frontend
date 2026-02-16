@@ -8,7 +8,6 @@ import {
   Alert,
   CircularProgress,
   InputAdornment,
-  Card,
   Container,
 } from '@mui/material';
 import { motion } from 'framer-motion';
@@ -31,13 +30,28 @@ export default function Login() {
     e?.preventDefault();
     setErr('');
     setLoading(true);
+
     try {
-      // Correct endpoint from Swagger: POST /api/v1/auth/token
-      const res = await api.post('/api/v1/auth/token', { email, password });
+      // 🔥 IMPORTANT: Spring Security expects FORM URL ENCODED
+      const params = new URLSearchParams();
+      params.append("username", email);   // backend expects username
+      params.append("password", password);
+
+      const res = await api.post('/api/v1/auth/token', params, {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        }
+      });
 
       console.log('Login response:', res.data);
 
-      let token = res.data?.token || res.data?.accessToken || res.data?.jwtToken || res.data;
+      // Extract token safely (supports multiple formats)
+      let token =
+        res.data?.token ||
+        res.data?.access_token ||
+        res.data?.accessToken ||
+        res.data?.jwtToken ||
+        res.data;
 
       if (typeof token === 'object' && token?.token) token = token.token;
       if (typeof token === 'object' && token?.accessToken) token = token.accessToken;
@@ -51,8 +65,14 @@ export default function Login() {
 
       enqueueSnackbar('Login successful!', { variant: 'success' });
       nav('/dashboard');
+
     } catch (ex) {
-      const errMsg = ex.response?.data?.message || ex.response?.data?.error || ex.response?.data || ex.message;
+      const errMsg =
+        ex.response?.data?.message ||
+        ex.response?.data?.error ||
+        ex.response?.data ||
+        ex.message;
+
       console.error('Login error:', errMsg);
       setErr(errMsg);
       enqueueSnackbar(errMsg, { variant: 'error' });
@@ -65,32 +85,17 @@ export default function Login() {
     <Container maxWidth="sm">
       <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', py: 4 }}>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} style={{ width: '100%' }}>
-          <Paper sx={{ p: 4, background: 'linear-gradient(135deg, rgba(0,212,255,0.1) 0%, rgba(255,0,110,0.05) 100%)', border: '1px solid rgba(0,212,255,0.2)', backdropFilter: 'blur(10px)' }}>
+          <Paper sx={{ p: 4 }}>
             <Box sx={{ textAlign: 'center', mb: 3 }}>
-              <Typography
-                variant="h4"
-                sx={{
-                  fontWeight: 800,
-                  background: 'linear-gradient(135deg, #00d4ff 0%, #ff006e 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  mb: 1,
-                }}
-              >
+              <Typography variant="h4" sx={{ fontWeight: 800, mb: 1 }}>
                 VulneraScan
               </Typography>
-              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.6)' }}>
+              <Typography variant="body2">
                 Advanced Security Scanning Platform
               </Typography>
             </Box>
 
-            {err && (
-              <motion.div initial={{ x: -10 }} animate={{ x: 0 }}>
-                <Alert severity="error" sx={{ mb: 2 }}>
-                  {err}
-                </Alert>
-              </motion.div>
-            )}
+            {err && <Alert severity="error" sx={{ mb: 2 }}>{err}</Alert>}
 
             <form onSubmit={submit}>
               <TextField
@@ -103,11 +108,12 @@ export default function Login() {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <EmailIcon sx={{ color: '#00d4ff' }} />
+                      <EmailIcon />
                     </InputAdornment>
                   ),
                 }}
               />
+
               <TextField
                 label="Password"
                 type="password"
@@ -119,33 +125,22 @@ export default function Login() {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <LockIcon sx={{ color: '#00d4ff' }} />
+                      <LockIcon />
                     </InputAdornment>
                   ),
                 }}
               />
+
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  fullWidth
-                  disabled={loading || !email || !password}
-                  sx={{ py: 1.5, fontSize: 16, fontWeight: 600 }}
-                >
+                <Button type="submit" variant="contained" fullWidth disabled={loading || !email || !password}>
                   {loading ? <CircularProgress size={24} /> : 'Sign In'}
                 </Button>
               </motion.div>
             </form>
 
-            <Typography variant="caption" sx={{ display: 'block', mt: 2, textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>
-              Use your backend credentials to login
-            </Typography>
-
-            <Typography sx={{ textAlign: 'center', mt: 3, color: 'rgba(255,255,255,0.6)' }}>
+            <Typography sx={{ textAlign: 'center', mt: 3 }}>
               Don't have an account?{' '}
-              <Link to="/signup" style={{ color: '#00d4ff', fontWeight: 600, textDecoration: 'none' }}>
-                Sign Up
-              </Link>
+              <Link to="/signup">Sign Up</Link>
             </Typography>
           </Paper>
         </motion.div>
