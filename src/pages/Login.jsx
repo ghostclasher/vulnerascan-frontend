@@ -32,25 +32,20 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // 🔥 IMPORTANT: Spring Security expects FORM URL ENCODED
-      const params = new URLSearchParams();
-      params.append("username", email);   // backend expects username
-      params.append("password", password);
-
-      const res = await api.post('/api/v1/auth/token', params, {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded"
-        }
+      // 🔥 Backend expects JSON body with email + password
+      const res = await api.post('/api/v1/auth/token', {
+        email: email,
+        password: password
       });
 
       console.log('Login response:', res.data);
 
-      // Extract token safely (supports multiple formats)
+      // Extract token
       let token =
         res.data?.token ||
-        res.data?.access_token ||
         res.data?.accessToken ||
         res.data?.jwtToken ||
+        res.data?.access_token ||
         res.data;
 
       if (typeof token === 'object' && token?.token) token = token.token;

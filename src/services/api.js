@@ -6,13 +6,28 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://vulnerascan2.onre
 const api = axios.create({
   baseURL: API_BASE,
   timeout: 120000,
+  headers: {
+    "Content-Type": "application/json"
+  }
 });
 
-api.interceptors.request.use(cfg => {
-  const token = getToken();
-  if (token) cfg.headers.Authorization = `Bearer ${token}`;
-  return cfg;
-}, err => Promise.reject(err));
+// Request interceptor
+api.interceptors.request.use((config) => {
+
+  // 🔥 Do NOT attach token for login or signup
+  const isAuthRequest =
+    config.url.includes('/api/v1/auth/token') ||
+    config.url.includes('/api/v1/auth/users/add');
+
+  if (!isAuthRequest) {
+    const token = getToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+
+  return config;
+}, (error) => Promise.reject(error));
 
 export default api;
 
